@@ -11,7 +11,7 @@ import configparser
 import PDCEvent
 
 PDCURL = "https://w5.hkust-gz.edu.cn/cgi-bin/std_cgi.sh/WService=broker_za_p/prg/akdc_stdt_main.r"
-SUFFIX = "@connect.hkust-gz.edu.cn"
+
 
         
 
@@ -21,7 +21,8 @@ def readUserInfo(path):
     userInfo = {"username": configReader.get("INFO", "username"), "password": configReader.get("INFO", "password")}
     return userInfo
 
-def loginAndNavigation(userDataPath):
+def loginAndNavigation(userDataPath, userDomain):
+
     service = ChromeService(executable_path=ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service)
     driver.get(PDCURL)
@@ -29,19 +30,21 @@ def loginAndNavigation(userDataPath):
     # Selectors for the element finding
     emailFieldSelector = (By.ID, "i0116")
     pwdFieldSelector = (By.ID, "i0118")
-    nextBtnSelector = (By.ID, "idSIButton9")
-    wait = WebDriverWait(driver, timeout=10, poll_frequency=1)
+    nextBtnSelector = (By.XPATH, "//input[@value = 'Next']")
+    signInBtnSelector = (By.XPATH, "//input[@value = 'Sign in']")
+    wait = WebDriverWait(driver, timeout=10)
     username, password = [readUserInfo(userDataPath)[key] for key in readUserInfo(userDataPath)]
+    suffix = "@connect.hkust-gz.edu.cn" if re.search("gz|guangzhou", userDomain, flags=re.IGNORECASE) else "@connect.ust.hk"
 
-    emailField = wait.until(EC.element_to_be_clickable(emailFieldSelector))
+    emailField = wait.until(EC.presence_of_element_located(emailFieldSelector))
+    emailField.send_keys(username + suffix)
     nextBtn = wait.until(EC.element_to_be_clickable(nextBtnSelector))
-    emailField.send_keys(username + SUFFIX)
     nextBtn.click()
 
 
     pwdField = wait.until(EC.element_to_be_clickable(pwdFieldSelector))
-    signInBtn = wait.until(EC.element_to_be_clickable(nextBtnSelector))
-    pwdField.send_keys(password)  
+    pwdField.send_keys(password)
+    signInBtn = wait.until(EC.element_to_be_clickable(signInBtnSelector))
     signInBtn.click()
 
     # Navigate to the event schedule page, cooperating with frames
@@ -52,8 +55,11 @@ def loginAndNavigation(userDataPath):
 
     scheduleFrame = driver.find_element(By.XPATH, "//frame[@name = 'detail_frame']")
     driver.switch_to.frame(scheduleFrame)
+    availRadioButton = driver.find_element(By.XPATH, "//input[@name = 'f_avail_seat_ind'][@value = 'Y']")
+    availRadioButton.click()
     searchButton = driver.find_element(By.XPATH, "//input[@name = 'f_searchBtn']")
     searchButton.click()
+
 
     eventTableFrame = driver.find_element(By.XPATH, "//frame[@name = 'detail_frame']")
     driver.switch_to.frame(eventTableFrame)
@@ -64,7 +70,7 @@ def loginAndNavigation(userDataPath):
 
 
 def dataProcessing(dataHTML):
-    soup = BeautifulSoup(dataHTML)
+    soup = BeautifulSoup(dataHTML, 'html.parser')
     eventTable = soup.find_all("table", class_ = "TB-4-OUTER-1")[-1]
     events = eventTable.find_all("tr", class_ = re.compile("TR-4-DETAIL.*"))
 
