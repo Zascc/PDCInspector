@@ -77,9 +77,9 @@ def dataProcessing(dataHTML):
     eventMetaInfoArr = []
     for idx, event in enumerate(events):
         # odd index represents a remark td
-        if(idx % 2 != 0):
-            # TODO: deal with remark here
-            continue
+        # if(idx % 2 != 0):
+        #     # TODO: deal with remark here
+        #     continue
         metaInfo = [el.text for el in event.find_all("td", class_ = re.compile("TD.*DETAIL"))]
         eventMetaInfoArr.append(metaInfo)
 
