@@ -5,7 +5,7 @@ import requests
 def PDCInspectorMain(args):
     # try catch error and re-login here
 
-    ENROLL_STATE_TEXT = "--"
+    ENROLL_STATE_TEXT = "Enrol"
     # ENROLL_STATE_TEXT = "Enrol"
 
     eventInfos = scraper.dataProcessing(scraper.loginAndNavigation(args.path, args.domain))
